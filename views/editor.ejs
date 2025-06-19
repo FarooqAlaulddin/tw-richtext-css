@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tailwind Live Editor</title>
+  <link rel="stylesheet" href="/assets/main.css">
+  <!-- Generated Tailwind styles -->
+  <style id="generated-styles"></style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Tailwind CSS Live Editor</h1>
+    
+    <div class="editor-container">
+      <div class="panel">
+        <div class="panel-header">
+          <span>HTML Editor</span>
+          <button onclick="updateStyles()">Refresh</button>
+        </div>
+        <textarea id="editor" placeholder="Write your HTML with Tailwind classes here..."><div class="bg-blue-500 text-white p-4 rounded-lg">
+  <h1 class="text-2xl font-bold">Hello World!</h1>
+  <p class="mt-2">This is styled with Tailwind!</p>
+</div>
+
+<div class="mt-6 max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
+  <div class="md:flex">
+    <div class="md:shrink-0">
+      <div class="h-48 w-full bg-gradient-to-br from-blue-500 to-purple-600 md:h-full md:w-48"></div>
+    </div>
+    <div class="p-8">
+      <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">
+        Case study
+      </div>
+      <h2 class="block mt-1 text-lg leading-tight font-medium text-black hover:underline">
+        Finding customers for your new business
+      </h2>
+      <p class="mt-2 text-gray-500">
+        Getting a new business off the ground is a lot of hard work. 
+        Here are five ideas you can use to find your first customers.
+      </p>
+      <button class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+        Read more
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="mt-8 p-6 bg-gray-100 rounded-lg">
+  <h3 class="text-xl font-bold mb-4">✨ Tailwind Classes Examples:</h3>
+  <div class="grid gap-4">
+    <div class="bg-red-500 text-white p-3 rounded">Background: bg-red-500</div>
+    <div class="bg-green-500 text-white p-3 rounded">Background: bg-green-500</div>
+    <div class="bg-yellow-400 text-black p-3 rounded">Background: bg-yellow-400</div>
+    <div class="border-4 border-blue-500 p-3 rounded">Border: border-4 border-blue-500</div>
+    <div class="text-purple-700 font-bold text-xl">Text: text-purple-700 text-xl font-bold</div>
+  </div>
+</div></textarea>
+        <div class="status" id="editor-status">Ready</div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-header">
+          <span>Generated CSS</span>
+          <div class="stats">
+            <span id="css-size">0 bytes</span>
+            <span id="class-count">0 classes</span>
+          </div>
+        </div>
+        <pre id="css-output">/* CSS will appear here */</pre>
+        <div class="status" id="css-status">Waiting for changes...</div>
+      </div>
+    </div>
+    
+    <div class="panel preview-container">
+      <div class="panel-header">
+        <span>Preview</span>
+        <span class="help-text">This shows your HTML rendered with Tailwind styles</span>
+      </div>
+      <div id="preview">
+        <!-- Preview will be rendered here -->
+      </div>
+    </div>
+  </div>
+  
+  <script type="module" src="/assets/main.js"></script>
+  <script>
+    let isUpdating = false;
+    
+    async function updateStyles() {
+      if (isUpdating) return;
+      isUpdating = true;
+      
+      const editor = document.getElementById('editor');
+      const html = editor.value;
+      const editorStatus = document.getElementById('editor-status');
+      const cssStatus = document.getElementById('css-status');
+      const cssOutput = document.getElementById('css-output');
+      const preview = document.getElementById('preview');
+      
+      editorStatus.textContent = 'Generating CSS...';
+      editorStatus.className = 'status loading';
+      cssStatus.textContent = 'Processing...';
+      cssStatus.className = 'status loading';
+      
+      try {
+        const response = await fetch('/api/generate-css', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ html })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        // Apply the CSS
+        document.getElementById('generated-styles').textContent = data.css;
+        
+        // Display the CSS
+        cssOutput.textContent = data.css || '/* No CSS generated - no Tailwind classes found */';
+        
+        // Render the preview
+        preview.innerHTML = html;
+        
+        // Update stats
+        const cssSize = new Blob([data.css]).size;
+        document.getElementById('css-size').textContent = cssSize + ' bytes';
+        
+        const classCount = (data.css.match(/\.[\w-]+/g) || []).length;
+        document.getElementById('class-count').textContent = classCount + ' classes';
+        
+        // Update status
+        editorStatus.textContent = 'Ready';
+        editorStatus.className = 'status success';
+        cssStatus.textContent = 'Generated successfully';
+        cssStatus.className = 'status success';
+        
+      } catch (err) {
+        console.error('Failed to generate CSS:', err);
+        editorStatus.textContent = 'Error: ' + err.message;
+        editorStatus.className = 'status error';
+        cssStatus.textContent = 'Generation failed';
+        cssStatus.className = 'status error';
+        cssOutput.textContent = '/* Error generating CSS */';
+        preview.innerHTML = '<p style="color: red;">Error rendering preview</p>';
+      } finally {
+        isUpdating = false;
+      }
+    }
+    
+    // Auto-update on input (debounced)
+    let timeout;
+    document.getElementById('editor').addEventListener('input', () => {
+      clearTimeout(timeout);
+      document.getElementById('editor-status').textContent = 'Typing...';
+      timeout = setTimeout(updateStyles, 800);
+    });
+    
+    // Initial load
+    updateStyles();
+  </script>
+</body>
+</html>

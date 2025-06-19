@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailwind Live Editor</title>
+    <link rel="stylesheet" href="/assets/main.css">
+    <!-- Generated Tailwind styles -->
+    <style id="generated-styles"></style>
+</head>
+
+<body>
+    <div class="container mx-auto p-4">
+        <h1 class="mb-6 text-3xl font-semibold">🎨 Tailwind CSS Live Editor</h1>
+
+        <div class="editor-container flex space-x-4">
+            <!-- HTML Editor Panel -->
+            <div class="panel flex-1 flex flex-col">
+                <div class="panel-header flex justify-between items-center mb-2">
+                    <span class="text-lg font-medium">HTML Editor</span>
+                    <button onclick="updateStyles()" class="px-3 py-1 bg-blue-500 text-white rounded">Refresh</button>
+                </div>
+                <textarea id="editor" class="flex-1 p-2 border rounded"
+                    placeholder="Write your HTML with Tailwind classes here...">
+
+                </textarea>
+                <div class="status mt-2" id="editor-status">Ready</div>
+            </div>
+
+            <!-- CSS Output Panel -->
+            <div class="panel flex-1 flex flex-col">
+                <div class="panel-header flex justify-between items-center mb-2">
+                    <span class="text-lg font-medium">Generated CSS</span>
+                    <div class="stats flex space-x-2">
+                        <span id="css-size">0 bytes</span>
+                        <span id="class-count">0 classes</span>
+                    </div>
+                </div>
+                <pre id="css-output" class="flex-1 p-2 border rounded overflow-auto">/* CSS will appear here */</pre>
+                <div class="status mt-2" id="css-status">Waiting for changes...</div>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="panel preview-container mt-6">
+            <div class="panel-header flex justify-between items-center mb-2">
+                <span class="text-lg font-medium">Preview</span>
+                <span class="help-text text-sm text-gray-500">This shows your HTML rendered with Tailwind styles</span>
+            </div>
+            <div id="preview" class="p-4 border rounded shadow">
+                <!-- Preview will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/assets/main.js"></script>
+</body>
+
+
+</html>
+
+
+<script>
+    // Beautified example HTML for display in textarea with proper spacing and indentation
+    const example = `
+<div class="bg-blue-500 text-white p-4 rounded-lg">
+    <h1 class="text-2xl font-bold">Hello World!</h1>
+    <p class="mt-2">This is styled with Tailwind!</p>
+</div>
+
+<div class="mt-6 max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
+    <div class="md:flex">
+        <div class="md:shrink-0">
+            <div class="h-48 w-full bg-gradient-to-br from-blue-500 to-purple-600 md:h-full md:w-48"></div>
+        </div>
+        <div class="p-8">
+            <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">
+                Case study
+            </div>
+            <h2 class="block mt-1 text-lg leading-tight font-medium text-black hover:underline">
+                Finding customers for your new business
+            </h2>
+            <p class="mt-2 text-gray-500">
+                Getting a new business off the ground is a lot of hard work.
+                Here are five ideas you can use to find your first customers.
+            </p>
+            <button class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                Read more
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="mt-8 p-6 bg-gray-100 rounded-lg">
+    <h3 class="text-xl font-bold mb-4">✨ Tailwind Classes Examples:</h3>
+    <div class="grid gap-4">
+        <div class="bg-red-500 text-white p-3 rounded">Background: bg-red-500</div>
+        <div class="bg-green-500 text-white p-3 rounded">Background: bg-green-500</div>
+        <div class="bg-yellow-400 text-black p-3 rounded">Background: bg-yellow-400</div>
+        <div class="border-4 border-blue-500 p-3 rounded">Border: border-4 border-blue-500</div>
+        <div class="text-purple-700 font-bold text-xl">Text: text-purple-700 text-xl font-bold</div>
+    </div>
+</div>`;
+    // Set the textarea value so the HTML is displayed as code
+    document.getElementById("editor").value = example.trim();
+</script>

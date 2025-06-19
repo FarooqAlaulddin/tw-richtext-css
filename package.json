@@ -1,0 +1,26 @@
+{
+  "name": "tw-richtext-css",
+  "version": "0.0.0",
+  "description": "Tool to generate css from html class names",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:watch": "vite build --watch"
+  },
+  "type": "module",
+  "author": "Farooq",
+  "license": "MIT",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.10",
+    "@tailwindcss/postcss": "^4.1.10",
+    "autoprefixer": "^10.4.21",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.10"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}
