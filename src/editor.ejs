@@ -6,44 +6,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tailwind Live Editor</title>
     <link rel="stylesheet" href="/assets/main.css">
-    <!-- Generated Tailwind styles -->
     <style id="generated-styles"></style>
+
+    <!-- PrismJS CSS for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism.css" rel="stylesheet" />
+    <!-- PrismJS core JS -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.js"></script>
+    <!-- Optional: Language components (e.g., JavaScript, HTML, CSS) -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-markup.min.js"></script>
+
+    <!-- js-beautify for auto-formatting HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/js-beautify@1.14.13/js/lib/beautify-html.min.js"></script>
 </head>
 
 <body>
-    <div class="container mx-auto p-4">
-        <h1 class="mb-6 text-3xl font-semibold">🎨 Tailwind CSS Live Editor</h1>
+    <div class="mx-auto p-4 xl:max-w-[150rem]">
+        <!-- <h1 class="mb-6 text-3xl font-semibold">🎨 Tailwind CSS Live Editor</h1> -->
+        <!-- <button id="show-bundle" class="mb-4 px-3 py-1 bg-gray-300 text-gray-700 rounded">Show CSS Panel</button> -->
 
-        <div class="editor-container flex space-x-4">
-            <!-- HTML Editor Panel -->
-            <div class="panel flex-1 flex flex-col">
-                <div class="panel-header flex justify-between items-center mb-2">
-                    <span class="text-lg font-medium">HTML Editor</span>
-                    <button onclick="updateStyles()" class="px-3 py-1 bg-blue-500 text-white rounded">Refresh</button>
-                </div>
-                <textarea id="editor" class="flex-1 p-2 border rounded"
-                    placeholder="Write your HTML with Tailwind classes here...">
-
-                </textarea>
-                <div class="status mt-2" id="editor-status">Ready</div>
+        <!-- HTML Editor Panel -->
+        <div data-tab="1" class="panel flex-1 flex flex-col">
+            <div class="panel-header flex justify-between items-center mb-2">
+                <span class="text-lg font-medium">HTML Editor</span>
+                <button id="refresh" class="px-3 py-1 bg-blue-500 text-white rounded">Refresh</button>
             </div>
 
-            <!-- CSS Output Panel -->
-            <div class="panel flex-1 flex flex-col">
-                <div class="panel-header flex justify-between items-center mb-2">
-                    <span class="text-lg font-medium">Generated CSS</span>
-                    <div class="stats flex space-x-2">
-                        <span id="css-size">0 bytes</span>
-                        <span id="class-count">0 classes</span>
-                    </div>
-                </div>
-                <pre id="css-output" class="flex-1 p-2 border rounded overflow-auto">/* CSS will appear here */</pre>
-                <div class="status mt-2" id="css-status">Waiting for changes...</div>
-            </div>
+            <pre id="editor" class="language-markup flex-1 p-2 border rounded bg-white overflow-auto"
+                contenteditable="true" spellcheck="false"
+                style="outline: none; display: block; min-height: 200px;"></pre>
+            <div class="status mt-2" id="editor-status">Ready</div>
         </div>
 
         <!-- Preview Panel -->
-        <div class="panel preview-container mt-6">
+        <div data-tab="2" class="panel preview-container mt-6">
             <div class="panel-header flex justify-between items-center mb-2">
                 <span class="text-lg font-medium">Preview</span>
                 <span class="help-text text-sm text-gray-500">This shows your HTML rendered with Tailwind styles</span>
@@ -52,6 +48,23 @@
                 <!-- Preview will be rendered here -->
             </div>
         </div>
+
+        <!-- CSS Output Panel -->
+        <div data-tab="3" id="tailwind-bundle" class="panel flex-1 flex flex-col mt-2">
+            <div class="panel-header flex justify-between items-center mb-2">
+                <span class="text-lg font-medium">Generated CSS</span>
+                <div class="stats flex space-x-2">
+                    <span id="css-size">0 bytes</span>
+                    <span id="class-count">0 classes</span>
+                </div>
+                <button id="toggle-bundle" class="ml-4 px-2 py-1 bg-gray-300 text-gray-700 rounded">Toggle CSS
+                    Panel</button>
+            </div>
+            <pre id="css-output" class="flex-1 p-2 border rounded overflow-auto">/* CSS will appear here */</pre>
+            <div class="status mt-2" id="css-status">Waiting for changes...</div>
+        </div>
+
+
     </div>
 
     <script type="module" src="/assets/main.js"></script>

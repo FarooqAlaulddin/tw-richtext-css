@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+
+.test {
+    @apply bg-green-100;
+}

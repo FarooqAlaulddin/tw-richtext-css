@@ -1,97 +1,110 @@
 import express from 'express';
-import fs from 'fs';
+import { compile, __unstable__loadDesignSystem } from '@tailwindcss/node';
+import { Scanner } from '@tailwindcss/oxide';
 import path from 'path';
-import { promisify } from 'util';
-import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import ejs from 'ejs';
-import { createRequire } from 'module';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const execAsync = promisify(exec);
-const require = createRequire(import.meta.url);
 
-// Set EJS as the view engine
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src'));
-
-// Serve static files from dist directory (Vite build output)
 app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.json());
 
-// Generate Tailwind CSS for given HTML (no caching)
-async function generateCssForHtml(html, options = {}) {
+// Cache the design system for better performance
+let cachedDesignSystem = null;
 
-    const {
-        includeBase = true,
-        includeUtilities = true,
-        includeTheme = true
-    } = options;
-    
-    // Create temporary files
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
-    const tempDir = path.join(__dirname, 'temp');
-    
-    // Ensure temp directory exists
-    if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
+async function getDesignSystem() {
+    if (!cachedDesignSystem) {
+        const inputCss = `
+            @layer theme, base, components, utilities;
+            @import "tailwindcss/preflight";
+            @import "tailwindcss/utilities";
+            @import "tailwindcss/theme.css";
+        `;
+        
+        cachedDesignSystem = await __unstable__loadDesignSystem(inputCss, {
+            base: __dirname
+        });
     }
+    return cachedDesignSystem;
+}
+
+async function generateCssForHtml(html, options = {}) {
+    const { utilities = true, preflight = true, theme = true } = options;
     
-    const htmlPath = path.join(tempDir, `temp_${timestamp}_${random}.html`);
-    const inputPath = path.join(tempDir, `temp_${timestamp}_${random}.input.css`);
-    const outputPath = path.join(tempDir, `temp_${timestamp}_${random}.output.css`);
-    
+    let inputCss = '@layer theme, base, components, utilities;\n';
+    if (preflight) inputCss += '@import "tailwindcss/preflight";\n';
+    if (utilities) inputCss += '@import "tailwindcss/utilities";\n';
+    inputCss += '@import "tailwindcss/theme.css";\n';
+
     try {
-        // Write HTML temporarily
-        await fs.promises.writeFile(htmlPath, html);
+        const designSystem = await getDesignSystem();
         
-        // @layer theme, base, components, utilities;
-        // @import "tailwindcss/theme.css" layer(theme);
-        // @import "tailwindcss/preflight.css" layer(base);
-        // @import "tailwindcss/utilities.css" layer(utilities);
-        // Create input CSS with only needed layers
-        let inputCss = '@layer theme, base, components, utilities;\n';
-        if (includeTheme) inputCss += '@import "tailwindcss/theme";\n';
-        if (includeBase) inputCss += '@import "tailwindcss/preflight";\n';
-        if (includeUtilities) inputCss += '@import "tailwindcss/utilities";\n';
-        // if (includeComponents) inputCss += '@import "tailwindcss/components";\n';
+        const scanner = new Scanner({ sources: [] });
+        const allCandidates = scanner.scanFiles([{
+            content: html,
+            extension: 'html'
+        }]);
         
-        inputCss += `@source "${htmlPath}";`;
+        // Method 1: Using parseCandidate
+        const validCandidates = allCandidates.filter(candidate => {
+            try {
+                const parsed = designSystem.parseCandidate(candidate);
+                return parsed && parsed.length > 0;
+            } catch {
+                return false;
+            }
+        });
         
-        await fs.promises.writeFile(inputPath, inputCss);
+        let inline = '\n'
+        // Method 2: Using candidatesToCss (more efficient for bulk validation)
+        const cssResults = designSystem.candidatesToCss(allCandidates);
+        const validCandidatesAlt = allCandidates.filter((_, i) => cssResults[i] !== null)
+        for(const k in validCandidatesAlt){
+            inline += `@source inline("${validCandidatesAlt[k]}");\n`
+        }
+        console.log(inline)
+        // console.log('Valid classes (parseCandidate):', validCandidates);
+        // console.log('Valid classes (candidatesToCss):', validCandidatesAlt);
+        // console.log('Invalid candidates tracked:', Array.from(designSystem.invalidCandidates));
         
-        // Run Tailwind CLI
-        const cmd = `npx @tailwindcss/cli -i ${inputPath} -o ${outputPath} --minify`; // --minify
-        await execAsync(cmd);
+        // Compile and build
+        const compiled = await compile(inputCss, {
+            base: __dirname,
+            onDependency: () => {}
+        });
         
-        // Read generated CSS
-        let css = await fs.promises.readFile(outputPath, 'utf-8');
-                
-        // Clean up temp files
-        await Promise.all([
-            fs.promises.unlink(htmlPath),
-            fs.promises.unlink(inputPath),
-            fs.promises.unlink(outputPath)
-        ]).catch(() => {}); // Ignore cleanup errors
+        const css = compiled.build(validCandidates);
         
-        return css;
+        return {
+            css,
+            stats: {
+                total: allCandidates.length,
+                valid: validCandidates.length,
+                validClasses: validCandidates,
+            }
+        };
     } catch (error) {
-        // Clean up on error
-        await Promise.all([
-            fs.promises.unlink(htmlPath).catch(() => {}),
-            fs.promises.unlink(inputPath).catch(() => {}),
-            fs.promises.unlink(outputPath).catch(() => {})
-        ]);
+        console.error('CSS generation error:', error);
         throw error;
     }
 }
 
-app.use(express.json());
+// Utility function to check a single class
+async function isValidTailwindClass(className) {
+    const designSystem = await getDesignSystem();
+    try {
+        const parsed = designSystem.parseCandidate(className);
+        return parsed && parsed.length > 0;
+    } catch {
+        return false;
+    }
+}
 
-// API endpoint for generating CSS
 app.post('/api/generate-css', async (req, res) => {
     try {
         const { html } = req.body;
@@ -99,27 +112,34 @@ app.post('/api/generate-css', async (req, res) => {
             return res.status(400).json({ error: 'HTML content required' });
         }
         
-        // Generate CSS on-the-fly (utilities only)
-        const css = await generateCssForHtml(html);
-        
-        res.json({ css });
+        const result = await generateCssForHtml(html);
+        res.json(result);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'CSS generation failed' });
     }
 });
 
-// Enhanced editor page with CSS preview
+app.post('/api/validate-class', async (req, res) => {
+    try {
+        const { className } = req.body;
+        const isValid = await isValidTailwindClass(className);
+        res.json({ className, isValid });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Validation failed' });
+    }
+});
+
 app.get('/editor', (req, res) => {
     res.render('editor');
 });
 
-// Root redirect
 app.get('/', (req, res) => {
     res.redirect('/editor');
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
     console.log(`📝 Open the editor at http://localhost:${PORT}/editor`);
